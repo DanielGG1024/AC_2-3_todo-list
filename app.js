@@ -5,6 +5,7 @@ const exphbs = require('express-handlebars')
 const Todo = require('./models/todo')
 const app = express()
 const bodyParser = require('body-parser')
+const { findById } = require('./models/todo')
 mongoose.connect('mongodb://localhost/todo-list', { useNewUrlParser: true, useUnifiedTopology: true })
 const db = mongoose.connection
 
@@ -29,6 +30,7 @@ app.get('/', (req, res) => {
 app.get('/todos/new', (req, res) => {
     return res.render('new')
 })
+
 app.post('/todos', (req, res) => {
     //從req.body 拿出表單裡的name資料
     const name = req.body.name
@@ -37,7 +39,34 @@ app.post('/todos', (req, res) => {
         //  完成新增後導回首頁
         .then(() => res.redirect('/'))
         .catch(error => console.log(error))
+})
 
+app.get('/todos/:id', (req, res) => {
+    const id = req.params.id
+    return Todo.findById(id)
+        .lean()
+        .then((todo) => res.render('detail', { todo }))
+        .catch(error => console.log(error))
+})
+
+app.get('/todos/:id/edit', (req, res) => {
+    const id = req.params.id
+    return Todo.findById(id)
+        .lean()
+        .then((todo) => res.render('edit', { todo }))
+        .catch(error => console.log(error))
+})
+
+app.post('/todos/:id/edit', (req, res) => {
+    const id = req.params.id
+    const name = req.body.name
+    return Todo.findById(id)
+        .then(todo => {
+            todo.name = name
+            return todo.save()
+        })
+        .then(() => res.redirect(`/todos/${id}`))
+        .catch(error => console.log(error))
 })
 
 app.listen(3000, () => {
